@@ -1,1 +1,573 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, Leaf, Zap, Activity, Droplet, ArrowRight, 
+  Globe, BarChart3, Sliders, Target, Lightbulb, Box, 
+  CheckCircle2, RefreshCw, Download, Info, MapPin, 
+  Briefcase, ChevronRight, PieChart, Share2, X, AlertTriangle, Clock, Users,
+  Thermometer, BookOpen, Truck, Factory, Sprout, ChevronDown, ChevronUp,
+  Smartphone, QrCode, Copy, Check
+} from 'lucide-react';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, 
+  PolarRadiusAxis, Radar 
+} from 'recharts';
 
+// --- DADOS ENRIQUECIDOS E TRADUZIDOS ---
+
+const deliveryData = [
+  { ano: '2020', share: 9, label: 'Início Pandemia' },
+  { ano: '2022', share: 15, label: 'Pós-Imediato' },
+  { ano: '2024', share: 19, label: 'Consolidação' },
+  { ano: '2026', share: 24, label: 'Expansão Phygital' },
+  { ano: '2028', share: 29, label: 'Maturidade Digital' },
+  { ano: '2030', share: 35, label: 'Integração Total' },
+];
+
+const trendsData = [
+  {
+    id: 1,
+    title: "Fundamentally Nutritious",
+    category: "Nutrição Clínica",
+    icon: <Activity className="w-6 h-6 text-rose-400" />,
+    color: "bg-rose-500/10 border-rose-500/20 text-rose-400",
+    desc: "O 'Efeito Ozempic' (medicamentos GLP-1) está redefinindo o volume das porções. O consumidor busca densidade nutricional máxima.",
+    stat: "6%",
+    statLabel: "População BR elegível GLP-1",
+    source: "Morgan Stanley Research 2024",
+    insight: "Estratégia: Criar linhas 'Companion Products' (Produtos Complementares) — alimentos ricos em proteína e fibras para combater a perda de massa magra.",
+    cases: ["Nestlé Vital Pursuit", "Nutren Control"]
+  },
+  {
+    id: 2,
+    title: "Sustentabilidade 4.0",
+    category: "ESG & Eficiência",
+    icon: <Leaf className="w-6 h-6 text-emerald-400" />,
+    color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
+    desc: "Upcycling (Reaproveitamento Criativo de Resíduos) vira eficiência de custo. Agricultura Regenerativa torna-se exigência para exportação.",
+    stat: "+30%",
+    statLabel: "Valor Agregado Upcycled",
+    source: "Mintel Sustainability 2024",
+    insight: "Estratégia: Mapear resíduos da sua cadeia (cascas, sementes) e transformá-los em novos SKUs (Unidades de Estoque) ou vender como insumo B2B (Business-to-Business).",
+    cases: ["Danone", "Nescafé Plan"]
+  },
+  {
+    id: 3,
+    title: "Rule Rebellion",
+    category: "Comportamento",
+    icon: <Zap className="w-6 h-6 text-amber-400" />,
+    color: "bg-amber-500/10 border-amber-500/20 text-amber-400",
+    desc: "Rebelião das Regras: busca por prazer visceral, sabores extremos ('Swicy' - Doce + Picante) e experiências caóticas.",
+    stat: "High",
+    statLabel: "Engajamento Gen-Z",
+    source: "WGSN Future Consumer",
+    insight: "Estratégia: Edições limitadas (LTOs - Limited Time Offers) com sabores exóticos ou colaborações inusitadas para gerar repercussão (Buzz) no TikTok.",
+    cases: ["Coca-Cola K-Wave", "Sadia Bites"]
+  },
+  {
+    id: 4,
+    title: "Stealth Health",
+    category: "Saudabilidade",
+    icon: <Droplet className="w-6 h-6 text-cyan-400" />,
+    color: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
+    desc: "Saúde Invisível: benefícios funcionais (fibras, probióticos) inseridos 'escondidos' em categorias indulgentes.",
+    stat: "15g",
+    statLabel: "Déficit Diário de Fibras",
+    source: "Euromonitor Voice of Consumer",
+    insight: "Estratégia: Adicionar inulina ou fibras invisíveis em refrigerantes, sorvetes e massas sem alterar o sabor (Conceito Clean Label / Rótulo Limpo).",
+    cases: ["Guaraná c/ Fibras", "Fusion Proteico"]
+  }
+];
+
+const simulatorOptions = {
+  sectors: ['Alimentos', 'Bebidas', 'Cosméticos & Wellness'],
+  sizes: ['Startup / Scale-up (Escalável)', 'PME (Pequena/Média)', 'Grande Indústria'],
+  regions: ['Sul', 'Sudeste', 'Centro-Oeste', 'Nordeste', 'Norte'],
+};
+
+const regionalInsightsDB: any = {
+  'Norte': {
+    focus: "Bioeconomia & Logística",
+    text: "Região com potencial global para ingredientes da biodiversidade (Açaí, Cacau nativo), mas com desafios logísticos severos.",
+    bonusScore: { ESG: 20, Risco: 10 },
+    challenge: "Custo do frete para o Sudeste e conservação de insumos frescos."
+  },
+  'Nordeste': {
+    focus: "Culturalidade & Clima",
+    text: "Mercado consumidor em expansão rápida. Alta demanda por produtos adaptados ao calor extremo e valorização de sabores regionais.",
+    bonusScore: { Agilidade: 10 },
+    challenge: "Sensibilidade a preço em algumas faixas de renda."
+  },
+  'Centro-Oeste': {
+    focus: "Agroindústria & Escala",
+    text: "Coração do agronegócio. Oportunidade massiva para processamento na origem e biomassas. Infraestrutura em melhoria.",
+    bonusScore: { CAPEX: 15, Tecnologia: 5 },
+    challenge: "Distância dos portos de exportação."
+  },
+  'Sudeste': {
+    focus: "Premiumização & Concorrência",
+    text: "Maior densidade de consumo e renda. Onde as tendências 'Early Adopter' (Pioneiros / Adotantes Iniciais) acontecem primeiro (ex: Plant-based).",
+    bonusScore: { Tecnologia: 10 },
+    challenge: "Saturação de mercado e custo de mídia/gôndola elevado."
+  },
+  'Sul': {
+    focus: "Tradição & Qualidade",
+    text: "Consumidor exigente com qualidade técnica. Forte presença de cooperativas e indústrias familiares tradicionais.",
+    bonusScore: { Sustentabilidade: 10 },
+    challenge: "Conservadorismo na adoção de inovações disruptivas."
+  }
+};
+
+// --- COMPONENTES ---
+
+const ShareModal = ({ onClose }: { onClose: () => void }) => {
+  const [copied, setCopied] = useState(false);
+  const mockUrl = "https://innovision-suite.app/share/8f7a2d";
+
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={onClose}></div>
+      <div className="relative bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
+        
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Smartphone className="w-6 h-6 text-indigo-400" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-1">Acesso Mobile</h3>
+          <p className="text-xs text-slate-400">Escaneie para levar a estratégia com você.</p>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl mx-auto w-48 h-48 mb-6 flex items-center justify-center relative group">
+          <img 
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${mockUrl}&color=0f172a`} 
+            alt="QR Code" 
+            className="w-full h-full mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity"
+          />
+        </div>
+
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+          <div className="flex-1 truncate text-xs text-slate-400 font-mono">
+            {mockUrl}
+          </div>
+          <button 
+            onClick={handleCopy}
+            className={`p-2 rounded-lg transition-colors ${copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TrendCard = ({ trend }: { trend: typeof trendsData[0] }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className={`relative overflow-hidden p-6 rounded-2xl border backdrop-blur-sm transition-all duration-500 ${trend.color} border-opacity-30 bg-opacity-5 hover:bg-opacity-10 group`}>
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-xl bg-slate-950/50 border border-white/5 ${trend.color.split(' ')[2]}`}>
+          {trend.icon}
+        </div>
+        <div className="text-right">
+          <span className="block text-2xl font-bold font-mono text-white">{trend.stat}</span>
+          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{trend.statLabel}</span>
+        </div>
+      </div>
+      <div className="mb-4">
+          <span className="inline-block px-2 py-0.5 rounded-full bg-slate-950/30 border border-white/5 text-[10px] uppercase tracking-wider text-slate-400 mb-2">
+              {trend.category}
+          </span>
+          <h3 className="text-xl font-bold text-slate-100 group-hover:text-white transition-colors">{trend.title}</h3>
+      </div>
+      <p className="text-slate-300 text-sm mb-4 leading-relaxed">
+        {trend.desc}
+      </p>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-white bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-all mb-2"
+      >
+        {isExpanded ? "Ocultar Detalhes" : "Ver Análise & Fontes"}
+        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+      {isExpanded && (
+        <div className="mt-4 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-slate-950/50 p-4 rounded-xl border border-white/5 mb-4">
+            <h4 className="flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase mb-2">
+              <Lightbulb className="w-3 h-3" /> Insight Tático
+            </h4>
+            <p className="text-sm text-slate-300 leading-relaxed">{trend.insight}</p>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-bold mb-3">
+             <BookOpen className="w-3 h-3" /> Fonte: {trend.source}
+          </div>
+          <div className="bg-slate-950/30 p-3 rounded-lg border border-white/5">
+            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Cases de Referência</span>
+            <div className="flex flex-wrap gap-2">
+              {trend.cases.map((c, i) => (
+                <span key={i} className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-400 whitespace-nowrap">{c}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PredictionRuler = ({ name, score, reason }: { name: string, score: number, reason: string }) => (
+  <div className="mb-6 last:mb-0">
+    <div className="flex justify-between items-end mb-2">
+      <span className="text-sm font-bold text-white">{name}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-slate-500 uppercase">Aderência</span>
+        <span className={`text-xs font-bold ${score > 90 ? 'text-emerald-400' : score > 80 ? 'text-indigo-400' : 'text-amber-400'}`}>{score}%</span>
+      </div>
+    </div>
+    <div className="w-full bg-slate-800 rounded-full h-3 mb-2 overflow-hidden relative">
+      <div className="absolute inset-0 flex justify-between px-2">
+        {[20, 40, 60, 80].map(tick => <div key={tick} className="h-full w-px bg-slate-700/50"></div>)}
+      </div>
+      <div 
+        className={`h-full rounded-full transition-all duration-1000 relative z-10 ${score > 90 ? 'bg-gradient-to-r from-emerald-600 to-emerald-400' : score > 80 ? 'bg-gradient-to-r from-indigo-600 to-indigo-400' : 'bg-gradient-to-r from-amber-600 to-amber-400'}`} 
+        style={{ width: `${score}%` }}
+      ></div>
+    </div>
+    <p className="text-xs text-slate-400 leading-relaxed pl-1 border-l-2 border-slate-700">{reason}</p>
+  </div>
+);
+
+// --- APP PRINCIPAL ---
+
+export default function InnovationSuite() {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'simulator'>('dashboard');
+  const [showShare, setShowShare] = useState(false);
+  
+  // Simulator State
+  const [simSector, setSimSector] = useState('');
+  const [simSize, setSimSize] = useState('');
+  const [simRegion, setSimRegion] = useState('');
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simResults, setSimResults] = useState<any>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeTab]);
+
+  const handleSimulate = () => {
+    setIsSimulating(true);
+    setSimResults(null);
+    
+    setTimeout(() => {
+      const regionalData = regionalInsightsDB[simRegion];
+      const bonus = regionalData ? regionalData.bonusScore : {};
+
+      // Logic adjustments for Radar
+      const baseAgility = simSize.includes('Startup') ? 90 : (simSize.includes('Grande') ? 50 : 70);
+      const baseCapex = simSize.includes('Grande') ? 95 : (simSize.includes('Startup') ? 30 : 60);
+      const baseRisk = simSector === 'Alimentos' ? 60 : 80;
+      
+      const radarData = [
+        { subject: 'Agilidade', A: Math.min(100, baseAgility + (bonus.Agilidade || 0)), fullMark: 100 },
+        { subject: 'CAPEX (Investimento)', A: Math.min(100, baseCapex + (bonus.CAPEX || 0)), fullMark: 100 },
+        { subject: 'Risco', A: Math.min(100, baseRisk + (bonus.Risco || 0)), fullMark: 100 },
+        { subject: 'Tecnologia', A: Math.min(100, (simSize.includes('Startup') ? 90 : 65) + (bonus.Tecnologia || 0)), fullMark: 100 },
+        { subject: 'ESG (Sustentabilidade)', A: Math.min(100, 75 + (bonus.ESG || 0)), fullMark: 100 },
+        { subject: 'Logística', A: simRegion === 'Sudeste' ? 95 : (simRegion === 'Norte' ? 40 : 70), fullMark: 100 },
+      ];
+
+      const radarInsights = [
+        { 
+          label: 'Capacidade Logística', 
+          val: radarData[5].A, 
+          text: radarData[5].A < 60 ? `A região ${simRegion} impõe desafios de distribuição. Priorize produtos com 'Shelf-life' (Prazo de Validade) estendido.` : `No ${simRegion}, a malha logística permite estratégias D2C (Venda Direta ao Consumidor) robustas.`
+        },
+        { 
+          label: 'Investimento (CAPEX)', 
+          val: radarData[1].A, 
+          text: radarData[1].A > 80 ? "Alto potencial para automação industrial 4.0." : "Recomendação: Busque parceiros de Co-packing (Embalamento Terceirizado) ou Co-manufacturing (Fabricação Terceirizada) para reduzir custos."
+        }
+      ];
+
+      const suggestedProducts = [
+        { name: "Snack Regional Upcycled", score: simRegion === 'Norte' ? 95 : 85, reason: "Uso de resíduos da fruticultura local (Upcycling)." },
+        { name: "Bebida Funcional Adaptógena", score: 88, reason: "Tendência global de 'Mood Food' (Alimentos para o Humor)." },
+        { name: "Proteína Híbrida Acessível", score: 75, reason: "Mistura de carne e vegetal para reduzir custo na gôndola (Blend)." }
+      ];
+
+      setSimResults({ radarData, radarInsights, suggestedProducts, regionalData });
+      setIsSimulating(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 pb-24 relative">
+      
+      {/* Navbar */}
+      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <Zap className="w-5 h-5 text-white" fill="white" />
+            </div>
+            <div>
+                <span className="font-bold text-lg tracking-tight text-white leading-none block">InnoVision <span className="text-indigo-400">Pro</span></span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex p-1 bg-slate-900 rounded-lg border border-slate-800">
+              <button onClick={() => setActiveTab('dashboard')} className={`px-4 lg:px-6 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Panorama</button>
+              <button onClick={() => setActiveTab('simulator')} className={`px-4 lg:px-6 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === 'simulator' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Simulador AI</button>
+            </div>
+            <button 
+              onClick={() => setShowShare(true)}
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors"
+              title="Compartilhar Mobile"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="md:hidden flex p-1 mt-3 bg-slate-900 rounded-lg border border-slate-800 w-full">
+            <button onClick={() => setActiveTab('dashboard')} className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Panorama</button>
+            <button onClick={() => setActiveTab('simulator')} className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === 'simulator' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Simulador</button>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10">
+        
+        {activeTab === 'dashboard' ? (
+          <div className="space-y-12 md:space-y-16 animate-in fade-in duration-700">
+            {/* Header */}
+            <header className="relative p-8 md:p-14 rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 border border-white/5 shadow-2xl">
+                <div className="relative z-10 max-w-4xl">
+                    <h1 className="text-3xl md:text-6xl font-bold text-white mb-4">Visão de Futuro 2030</h1>
+                    <p className="text-base md:text-lg text-slate-400 max-w-2xl leading-relaxed mb-6">
+                      Análise consolidada de macrotendências para Bens de Consumo (FMCG).
+                    </p>
+                    <div className="flex flex-wrap gap-4 text-xs font-mono text-slate-500 uppercase tracking-widest border-t border-white/10 pt-4">
+                      <span>Dados:</span>
+                      <span className="text-indigo-400">NielsenIQ</span>
+                      <span className="text-indigo-400">Euromonitor</span>
+                      <span className="text-indigo-400">Mintel</span>
+                    </div>
+                </div>
+            </header>
+
+            {/* Gráfico */}
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 bg-slate-900/50 border border-slate-800 rounded-3xl p-6 md:p-8">
+                <div className="mb-6">
+                    <div className="flex flex-col md:flex-row justify-between md:items-start mb-2 gap-2">
+                        <h3 className="text-xl font-bold text-white">Digitalização do Consumo</h3>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                           <BookOpen className="w-3 h-3" /> Fonte: McKinsey
+                        </div>
+                    </div>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+                      A curva projeta a consolidação do modelo "Phygital" (Físico + Digital). O crescimento não é linear; espera-se uma aceleração com o 5G.
+                    </p>
+                </div>
+                <div className="h-64 md:h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={deliveryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorShare" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                      <XAxis dataKey="ano" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" unit="%" fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }} />
+                      <Area type="monotone" dataKey="share" stroke="#8b5cf6" strokeWidth={3} fill="url(#colorShare)" activeDot={{ r: 6, fill: "#fff" }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                  <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl h-full flex flex-col justify-center">
+                      <h4 className="text-slate-400 text-sm uppercase font-bold mb-2">Insight de Canal</h4>
+                      <p className="text-sm text-slate-300 leading-relaxed mb-4">
+                        O Delivery deixa de ser apenas conveniência para ser o principal canal de descoberta para a Classe A/B.
+                      </p>
+                      <div className="mt-auto pt-4 border-t border-slate-800">
+                        <span className="text-4xl font-bold text-white block">+8.5%</span>
+                        <span className="text-xs text-emerald-400">CAGR Esperado (Taxa de Crescimento Anual)</span>
+                      </div>
+                  </div>
+              </div>
+            </section>
+            
+            {/* Tendências */}
+            <section>
+              <h2 className="text-2xl font-bold text-white mb-4">Deep Dive: Tendências 2025 (Mergulho Profundo)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {trendsData.map((trend) => <TrendCard key={trend.id} trend={trend} />)}
+              </div>
+            </section>
+          </div>
+        ) : (
+          // === SIMULATOR VIEW ===
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
+            
+            {/* Painel de Inputs */}
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24 z-20">
+               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+                  <h3 className="font-bold text-white text-lg mb-4 flex items-center gap-2">
+                    <Sliders className="w-5 h-5 text-indigo-400" /> Configuração
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase">Setor</label>
+                      <select 
+                        className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 outline-none focus:border-indigo-500 transition-colors"
+                        value={simSector}
+                        onChange={(e) => setSimSector(e.target.value)}
+                      >
+                        <option value="">Selecione...</option>
+                        {simulatorOptions.sectors.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase">Porte</label>
+                      <select 
+                        className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 outline-none focus:border-indigo-500 transition-colors"
+                        value={simSize}
+                        onChange={(e) => setSimSize(e.target.value)}
+                      >
+                         <option value="">Selecione...</option>
+                        {simulatorOptions.sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                         <MapPin className="w-3 h-3 text-emerald-400" /> Região
+                      </label>
+                      <select 
+                        className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 outline-none focus:border-indigo-500 transition-colors border-emerald-500/30"
+                        value={simRegion}
+                        onChange={(e) => setSimRegion(e.target.value)}
+                      >
+                         <option value="">Selecione...</option>
+                        {simulatorOptions.regions.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+
+                    <button 
+                      onClick={handleSimulate}
+                      disabled={!simSector || !simSize || !simRegion || isSimulating}
+                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl transition-all flex justify-center gap-2 mt-4 shadow-lg shadow-indigo-900/20"
+                    >
+                      {isSimulating ? <RefreshCw className="animate-spin" /> : "Gerar Análise"}
+                    </button>
+                  </div>
+               </div>
+            </div>
+
+            {/* Painel de Resultados */}
+            <div className="lg:col-span-8 space-y-8">
+              {!simResults && (
+                <div className="h-96 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/20 text-slate-500 text-center p-8">
+                  <MapPin className="w-12 h-12 mb-4 opacity-50 mx-auto" />
+                  <h4 className="text-lg font-bold text-slate-300 mb-2">Aguardando Parâmetros</h4>
+                  <p className="text-sm max-w-md mx-auto">Selecione o setor e a região para ver o impacto logístico e cultural na inovação.</p>
+                </div>
+              )}
+
+              {simResults && (
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8">
+                  
+                  {/* Card Inteligência Regional */}
+                  <div className="bg-gradient-to-r from-emerald-900/20 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 relative overflow-hidden">
+                    <div className="relative z-10">
+                        <h4 className="text-emerald-400 font-bold uppercase tracking-wider text-xs mb-2 flex items-center gap-2">
+                            <MapPin className="w-4 h-4" /> Inteligência Regional: {simRegion}
+                        </h4>
+                        <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{simResults.regionalData.focus}</h3>
+                        <p className="text-slate-300 text-sm leading-relaxed mb-4 max-w-2xl">
+                            {simResults.regionalData.text}
+                        </p>
+                        <div className="inline-block">
+                             <div>
+                                <span className="text-[10px] text-slate-500 uppercase font-bold block">Desafio Crítico</span>
+                                <span className="text-xs text-rose-300 font-medium">{simResults.regionalData.challenge}</span>
+                             </div>
+                        </div>
+                    </div>
+                  </div>
+
+                  {/* Radar */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/50 border border-indigo-500/20 rounded-3xl p-6">
+                    <div className="h-56 relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={simResults.radarData}>
+                            <PolarGrid stroke="#334155" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                            <Radar name="Score" dataKey="A" stroke="#8b5cf6" strokeWidth={2} fill="#8b5cf6" fillOpacity={0.4} />
+                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' }} />
+                        </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    
+                    <div className="flex flex-col justify-center space-y-4">
+                      {simResults.radarInsights.map((insight: any, idx: number) => (
+                        <div key={idx} className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                           <div className="flex justify-between mb-1">
+                             <span className="text-xs font-bold text-slate-400 uppercase">{insight.label}</span>
+                             <span className={`text-xs font-bold ${insight.val > 70 ? 'text-emerald-400' : 'text-amber-400'}`}>{insight.val}/100</span>
+                           </div>
+                           <p className="text-xs text-slate-300 leading-relaxed">{insight.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Termômetro */}
+                  <div className="bg-gradient-to-br from-slate-900 to-indigo-950/20 border border-slate-800 rounded-3xl p-6 md:p-8">
+                     <div className="flex items-start gap-4 mb-6">
+                        <div className="p-3 bg-emerald-500/10 rounded-xl">
+                          <Thermometer className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white">Termômetro de Produtos</h3>
+                          <p className="text-sm text-slate-400 mt-1">
+                            Conceitos com maior aderência ao perfil (Product-Market Fit / Aderência de Mercado).
+                          </p>
+                        </div>
+                     </div>
+
+                     <div className="space-y-2">
+                        {simResults.suggestedProducts.map((prod: any, idx: number) => (
+                          <PredictionRuler key={idx} name={prod.name} score={prod.score} reason={prod.reason} />
+                        ))}
+                     </div>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Modal de Compartilhamento */}
+      {showShare && <ShareModal onClose={() => setShowShare(false)} />}
+    </div>
+  );
+}
